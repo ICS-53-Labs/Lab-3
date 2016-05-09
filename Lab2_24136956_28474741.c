@@ -60,10 +60,144 @@
  * mem_heap_hi () = pointer to the first byte above the heap
  * mem_heapsize () = size of heap
  */
- 
+ /*
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+static char* heap;
+//Initializing and allocating heap: heap= (char*)malloc(MAX_HEAP_SIZE);
+static char* heap_last;
+//Initializing last heap: heap_last = (char*) heap;
+static char* heap_max;
+//Initializing heap max address: heap_max = (char*) (heap + MAX_HEAP_SIZE);
+*/
+//From Text Book
+//Extend heap by n bytes and retuns the start address of the new area.
+/* Heap extender void* mem_sbrk (int n) {
+	char* start_addr = heap_last;
+	if (n < 0 || heap_last + n > heap_max) {
+		//Error
+		return (void*) -1;
+	}
+	heap_last += n;
+	return (void*) start_addr;
+}
+//Create heap with initial free block
+int mm_init(void) {
+	if ((heap_listp = mem_sbrk(4*WSIZE)) == (void*)-1) return -1;
+	PUT(head_listp,0); //Alignment padding
+	PUT(head_listp+(1*WSIZE),PACK(DSIZE,1)); //Prologue header
+	PUT(head_listp+(2*WSIZE),PACK(DSIZE,1)); //Prologue footer
+	PUT(head_listp+(3*WSIZE),PACK(0,1)); //Epilogue header
+	head_listp += (2*WSIZE);
+	//Extend the empty heap with a free block
+	if (extend_heap(CHUNKSIZE/WSIZE) == NULL) return -1;
+	return 0;
+}
+//Extend the heap with a new free block
+static void* extend_heap(size_t words) {
+	char* bp;
+	size_t size;
+	//Allocate an even number of words to maintain alignment
+	size = (words%2)?(words+1)*WSIZE : words*WSIZE;
+	if ((long)(bp=mem_sbrk(size))==-1) return NULL;
+	//Initialize free block header/footer and the epilogue header
+	PUT(HDRP(bp),PACK(size,0)); //new free block header
+	PUT(FTRP(bp),PACK(size,0)); //new free block footer
+	PUT(HDRP(NEXT_BLKP(bp)),PACK(0,1)); //new epilogue header
+	//Coalesce if the previous block was free
+	return coalesce(bp);
+}
+//Free
+void mm_free(void* bp) {
+	size_t size = GET_SIZE(HDRP(bp));
+	PUT(HDRP(bp),PACK(size,0));
+	PUT(FTRP(bp),PACK(size,0));
+	caolesce(bp);
+}
+//Coalesce
+static void* coalesce (void* bp) {
+	size_t prev_alloc = GET_ALLOC(FTRP(PREV_BLKP(bp)));
+	size_t next_alloc = GET_ALLOC(HDRP(NEXT_BLKP(bp)));
+	size_t size = GET_SIZE(HDRP(bp));
+	if(prev_alloc && next_alloc) return bp; //Case 1
+	else if (prev_alloc && !next_alloc) { //Case 2
+		size += GET_SIZE(HDRP(NEXT_BLKP(bp)));
+		PUT(HDRP(bp),PACK(size,0));
+		PUT(FTRP(bp),PACK(size,0));
+	}
+	else if (!prev_alloc && next_alloc) { //Case 3
+		size += GET_SIZE(HDRP(PREV_BLKP(bp)));
+		PUT(FTRP(bp),PACK(size,0));
+		PUT(HDRP(PREV_BLKP(bp)),PACK(size,0));
+		bp=PREV_BLKP(bp);
+	}
+	else { //Case 4
+		size += GET_SIZE(HDRP(PREV_BLKP(bp)))+GET_SIZE(FTRP(NEXT_BLKP(bp)));
+		PUT(HDRP(PREV_BLKP(bp)),PACK(size,0));
+		PUT(FTRP(MEXT_BLKP(bp)),PACK(size,0));
+		bp=PREV_BLKP(bp);
+	}
+	return bp;
+}
+//Allocated
+void* mm_malloc (size_t size) {
+	size_t asize; //Adjusted block size
+	size_t extendsize; //Amount to extend heap if no fit
+	char* bp;
+	//Ignore spurious requests
+	if (size==0) return NULL;
+	//Adjust block size to include overhead and alignment reqs
+	if (size <= DSIZE) asize =2*DSIZE;
+	else asize=DSIZE*((size+DSIZE+DSIZE-1)/DSIZE);
+	//Search the free list for a fit
+	if ((bp=find_fit(asize)) != NULL) {
+		place(bp,asize);
+		return bp;
+	}
+	//No fit found. Get more memory and place the block
+	extendsize=MAX(asize,CHUNKSIZE);
+	if((bp=extend_heap(extendsize/WSIZE))==NULL) return NULL;
+	place(bp,asize);
+	return bp;
+}
+*/
+
+//Macros for free list manipulation
+/*
+wsize = 4, dsize = 8, chunksize = 1<<12
+MAX(x,y) x > y ? x : y
+//Pack a size and allocated bit into a word
+PACK(size,alloc) size | alloc
+//Read and write a word at address parsfnm
+GET(p) *(unsigned int *)parsfnm
+PUT(p,val) *(unsigned int *) p = val
+//Read the size and allocated fields from address parsfnm
+GET_SIZE(p) GET(p) & ~0x7
+GET_ALLOC(p) GET(p) & 0x1
+//Given block ptr bp, compute address of its header and footer
+HDRP(bp) (char*)bp-wsize
+FTRP(bp) (char*)bp+get_size(HDRP(bp)-dsize)
+//Given block ptr bp, compute addess of next and previous blocks
+NEXT_BLKP(bp) (char*)bp+get_size(char*)bp-wsize
+PREV_BLKP(bp) (char*)bp-get_size(char*)bp-dsize
+*/
+/* Functions
+-Allocate - Allocate memory in heap. Used for allocate command
+-Free - Free memory. Used for free command
+-Print
+-Write
+-Read
+-Join
+-Check heap
+-Get addresses of next and previous blocks
+-Get addresses of header and footer
+-Get size, allocation flag
+-initialize heap
+-extend heap
+-find free block
+*/
 
 //Debug Set
 #define DEBUG 0
