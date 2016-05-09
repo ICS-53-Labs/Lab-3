@@ -1,6 +1,6 @@
 //Park, Joseph: 24136956
 //Dunn, Alex: 29474741
- 
+//http://cs.nyu.edu/~acase/fa14/CS201/labs/malloclab-recitation.pdf
 /* TODO: 
  * Functions:
  * -Parseline
@@ -8,9 +8,12 @@
  * --Allocate (number of bytes in the allocated block) = Allocate a block of memory from heap. Print out a unique block number which is associated with the block of memory which has just been allocated. The block numbers should increment each time a new block is allocated. Ex: First block is number 1, second is 2, etc. Only allocated blocks receive block numbers.
  *		What happens when there is not enough space in the heap? Fragmentation? 
  *		Running out of block numbers? 
+ *		Function should return a pointer to the allocated memory block. If size is 0, then NULL returns.
+ *		Allocation should look for the first available space. What about combining free spaces?
  * --Free (block number to free) = Free a block of memory. It must be an allocated block. When a block is freed, its block number is no longer valid. The block number should not be reused to number any new block.
  *		Block Number does not exist?
  *		Block Number associated with unallocated block, or previously allocated block? Ex: Free 1, Free 1
+ *		Function returns the block
  * --Blocklist () = Print out information about all of the blocks in your heap. Each block per row. First row is Column Headers: Size, Allocated, Start, End. The columns are size (number of bytes in the block), allocated (yer or no), start (starting address), end (ending address)
  *		How to find starting and ending address?
  *		How to find size?
@@ -29,6 +32,33 @@
  * Determine if a block is allocated or not/or figure out the size in between allocated blocks
  * Find out the starting and ending addresses
  * Do not use malloc and free, only for the heap.
+ * Free list, dynamic allocator
+ * Heap consistency checker, call after every change to the heap
+		Is every chunk of memory in the free list actually free?
+		Are there any consecutive free chunks of memory that escaped coalescing?
+		Is every chunk of memory that is free actually in the free list?
+		Do any allocated chunks of memory overlap?
+ * HEAP:
+ * Implemented as a collection of variable sized blocks, which can be allocated or free
+ * Is Heap word-addressed (4 bytes per address)? or is it byte addressed.
+ * From Power Point:
+ * Knowing How Much to Free:
+ *		Keep the length of a block in the word preceding the block, AKA the header. This requires one extra word per allocation block
+ * Keeping Track of Free Blocks:
+ * 		Free List - Implicit: Using length, link all blocks (linked list) - Explicit: Using pointers, only free blocks; 
+ * Implicit List:
+		Store allocation flag in the last bit of the size header word. Mask the size word to determine
+		To find a free block: search list from beginning, choose first free block that fits OR choose best free block (that leaves the fewest bytes left over)
+		Allocating in Free block: Split the block?
+		Freeing a block: clear the allocated flag, clear the memory- How?
+		Coalescing: Joining free adjacent blocks. Bidirectional Coalescing requires a footer - an additional word per block
+ * Explicit List - Requires a linked list, pref. double linked list
+ * Fragmentation - When a size n block is allocated in a free block of size m > n, we can split the free block into n and m - n blocks, having the m - n block free, or assume the m - n portion is allocated as well
+ * Useful functions
+ * mem_sbrk (n) = grows heap by positive n bytes
+ * mem_heap_lo () = pointer to the lowest byte in the heap
+ * mem_heap_hi () = pointer to the first byte above the heap
+ * mem_heapsize () = size of heap
  */
  
 #include <stdio.h>
