@@ -1,0 +1,10 @@
+﻿  main.c
+d:\files\school\irvine\spring 2016\ics 53 system design\ics 53 labs\lab-3\lab3\lab3\main.c(210): warning C4013: 'malloc' undefined; assuming extern returning int
+d:\files\school\irvine\spring 2016\ics 53 system design\ics 53 labs\lab-3\lab3\lab3\main.c(316): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\string.h(453): note: see declaration of 'strtok'
+d:\files\school\irvine\spring 2016\ics 53 system design\ics 53 labs\lab-3\lab3\lab3\main.c(322): warning C4996: 'strtok': This function or variable may be unsafe. Consider using strtok_s instead. To disable deprecation, use _CRT_SECURE_NO_WARNINGS. See online help for details.
+  c:\program files (x86)\windows kits\10\include\10.0.10240.0\ucrt\string.h(453): note: see declaration of 'strtok'
+d:\files\school\irvine\spring 2016\ics 53 system design\ics 53 labs\lab-3\lab3\lab3\main.c(341): warning C4013: 'atoi' undefined; assuming extern returning int
+d:\files\school\irvine\spring 2016\ics 53 system design\ics 53 labs\lab-3\lab3\lab3\main.c(372): warning C4013: 'free' undefined; assuming extern returning int
+d:\files\school\irvine\spring 2016\ics 53 system design\ics 53 labs\lab-3\lab3\lab3\main.c(374): warning C4013: 'exit' undefined; assuming extern returning int
+  Lab3.vcxproj -> D:\Files\School\IRVINE\Spring 2016\ICS 53 System Design\ICS 53 Labs\Lab-3\Lab3\Debug\Lab3.exe
