@@ -13,6 +13,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <ctype.h>
 
 
  /* User Input */
@@ -39,7 +40,7 @@
 
  /* Constraints */
  /* Heap Size */
-#define HEAP_SIZE 400
+#define HEAP_SIZE 6
  /* Header Size */
 #define HEADER_SIZE 2
  /* Smallest Heap Index */
@@ -53,7 +54,7 @@
  /* Unallocated Block Number */
 #define UNA_BLOCK_NUMBER 0
  /* Minimum Block Size */
-#define MIN_BLOCK_SIZE HEADER_SIZE + 1
+#define MIN_BLOCK_SIZE 1
  /* Maximum Block Size */
 #define MAX_BLOCK_SIZE HEAP_SIZE
  /* Allocated Flag */
@@ -328,12 +329,18 @@ int allocate(char* heap, int size) {
 		}
 		/* Determine if splitting is needed */
 		unsigned short actual_new_size = HEADER_SIZE + size;
+		if (DEBUG) printf("Actual New Size: %u\n", actual_new_size);
 		unsigned short actual_old_size = HEADER_SIZE + block_size;
-		if (actual_old_size > actual_new_size) { /* Leftovers */
+		if (DEBUG) printf("Actual Old Size: %u\n", actual_old_size);
+		int leftovers = 0;
+		if ((actual_old_size - actual_new_size) > HEADER_SIZE) {
+			leftovers = 1;
+		}
+		if (leftovers) { /* Leftovers */
 			/* Create new header */
 			size_t split_pos = i + actual_new_size;
 			if (DEBUG) printf("Split Pos: %u\n", split_pos);
-			unsigned short split_block_size = block_size - size - HEADER_SIZE;
+			unsigned short split_block_size = actual_old_size - actual_new_size - HEADER_SIZE;
 			if (DEBUG) printf("Split Block Size: %u\n", split_block_size);
 			unsigned short split_block_number = UNA_BLOCK_NUMBER;
 			if (DEBUG) printf("Split Block Number: %u\n", split_block_number);
@@ -346,13 +353,16 @@ int allocate(char* heap, int size) {
 			}
 			if (DEBUG) printf("No problem packing new infromation into split block.\n");
 		}
+		else {
+			setBlockSize(heap, i, block_size);
+		}
 		if (STAT) {
 			unsigned short bn, bs;
 			unsigned char af;
 			printf("\nAllocated Block Information\n");
 			unpack(heap, i, &bn, &bs, &af);
 			printf("Position: %u\nBlock Number: %u\nBlock Size: %u\nAlloc FLag: %u\n\n", i, bn, bs, af);
-			if (actual_old_size > actual_new_size) {
+			if (leftovers) {
 				size_t p = i + actual_new_size;
 				printf("Split Block Information\n");
 				unpack(heap, p, &bn, &bs, &af);
@@ -388,7 +398,9 @@ void blocklist(char* heap) {
 	size_t start = (size_t)&heap, end;
 	/* Print the column headings */
 	printf("Size\t\Allocated\tStart     \tEnd\n");
+	if (DEBUG) printf("MAX_INDEX: %u\n", MAX_INDEX);
 	while (s < MAX_INDEX) {
+		if (DEBUG) printf("Current Pos: %u\n", s);
 		/* Get actual block size */
 		unsigned short size = getBlockSize(heap, s) + HEADER_SIZE;
 		/* Get allocation status */
@@ -399,6 +411,15 @@ void blocklist(char* heap) {
 		printf("%-4u\t%-9s\t0x%-08x\t0x%-08x\n", size, alloc_flag, start, end);
 		s += size;
 		start += s;
+	}
+}
+
+/* Convert string to all lower-case */
+void lower(char* string) {
+	size_t i = 0;
+	while (string[i] != '\0') {
+		string[i] = tolower(string[i]);
+		++i;
 	}
 }
 
@@ -419,6 +440,8 @@ void parseLine(char* cmdline, char* argv[MAX_ARGS]) {
 		}
 		argv[++i] = strtok(NULL, delim);
 	}
+	/* lower case the command */
+	lower(argv[0]);
 }
 
 /* Count the number of arguments */
