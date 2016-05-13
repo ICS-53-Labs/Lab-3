@@ -5,24 +5,24 @@
 
 /* TODOS */
 /* TESTING
- * Test Input Parsing and Tokenizing
- * Test Each Command (Except QUIT)
- * Test Packing and Unpacking
- */
+* Test Input Parsing and Tokenizing
+* Test Each Command (Except QUIT)
+* Test Packing and Unpacking
+*/
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
 
- /* User Input */
- /* Max arguments in a command */
+/* User Input */
+/* Max arguments in a command */
 #define MAX_ARGS 20
- /* Delimiter for Tokenizing */
+/* Delimiter for Tokenizing */
 #define TOKEN_DELIM " \t"
- /* Max command line characters */
+/* Max command line characters */
 #define MAX_CMD_LINE 80
- /* Commands */
+/* Commands */
 #define ALLOCATE "allocate"
 #define FREE "free"
 #define BLOCKLIST "blocklist"
@@ -31,7 +31,7 @@
 #define QUIT "quit"
 #define SET "set"
 #define LIST "list"
- /* Arguments */
+/* Arguments */
 #define ARGS_ALLOCATE 1
 #define ARGS_FREE 1
 #define ARGS_BLOCKLIST 0
@@ -41,68 +41,68 @@
 #define ARGS_SET 2
 #define ARGS_LIST 0
 
- /* Constraints */
- /* Heap Size */
+/* Constraints */
+/* Heap Size */
 #define HEAP_SIZE 400
- /* Header Size */
+/* Header Size */
 #define HEADER_SIZE 2
- /* Smallest Heap Index */
+/* Smallest Heap Index */
 #define MIN_INDEX 0
- /* Largest Heap Index */
+/* Largest Heap Index */
 #define MAX_INDEX HEAP_SIZE - 1
- /* Minimum Block Number */
+/* Minimum Block Number */
 #define MIN_BLOCK_NUMBER 1
- /* Maximum Block Number */
+/* Maximum Block Number */
 #define MAX_BLOCK_NUMBER 63 //6 bits - 1
- /* Unallocated Block Number */
+/* Unallocated Block Number */
 #define UNA_BLOCK_NUMBER 0
- /* Minimum Block Size */
+/* Minimum Block Size */
 #define MIN_BLOCK_SIZE 1
- /* Maximum Block Size */
+/* Maximum Block Size */
 #define MAX_BLOCK_SIZE HEAP_SIZE
- /* Allocated Flag */
+/* Allocated Flag */
 #define ALLOCATION_FLAG 1
- /* Free Flag */
+/* Free Flag */
 #define FREE_FLAG 0
 
- /* Masking Values */
- /* Mask value to access the B 9 of a 2 byte value */
+/* Masking Values */
+/* Mask value to access the B 9 of a 2 byte value */
 #define B9_TWO_BYTE 0x100
- /* Mask value to access the LS 6 bits of a 2 byte value */
+/* Mask value to access the LS 6 bits of a 2 byte value */
 #define LSB6_TWO_BYTE 0x3F
- /* Mask value to access the LS 8 bits of a 2 byte value */
+/* Mask value to access the LS 8 bits of a 2 byte value */
 #define LSB9_TWO_BYTE 0xFF
- /* Mask value to access the MSB of a 1 byte value */
+/* Mask value to access the MSB of a 1 byte value */
 #define MSB_ONE_BYTE 0x80
- /* Mask value to access the B 7 of a 1 byte value */
+/* Mask value to access the B 7 of a 1 byte value */
 #define B7_ONE_BYTE 0x40
- /* Mask value to access the LS 6 bits of a 1 byte value */
+/* Mask value to access the LS 6 bits of a 1 byte value */
 #define LSB6_ONE_BYTE 0x3F
- /* Mask value to acces LS 7 bits of a 1 byte value */
-#define LSB7_ONE_BYTE 0x40
- /* MS 2 bits of 1 byte */
+/* Mask value to acces LS 7 bits of a 1 byte value */
+#define LSB7_ONE_BYTE 0x7F
+/* MS 2 bits of 1 byte */
 #define MSB2_ONE_BYTE 0xC0
 
- /* Integer Error Codes */
- /* Success */
+/* Integer Error Codes */
+/* Success */
 #define SUCCESS 1
- /* Non-Error Failure */
+/* Non-Error Failure */
 #define FAILURE 0
- /* Bad Position - Means Position is outside of the array*/
+/* Bad Position - Means Position is outside of the array*/
 #define BAD_POS -1
- /* Unwritable Position - Means position is not writable in context. I.E. This may mean it is a header for writing into the payload */
+/* Unwritable Position - Means position is not writable in context. I.E. This may mean it is a header for writing into the payload */
 #define UNW_POS -2
- /* Invalid Block Number */
+/* Invalid Block Number */
 #define BAD_BLOCK_NUM -3
- /* Invalid Block Size */
+/* Invalid Block Size */
 #define BAD_BLOCK_SIZE -4
- /* Heap is empty - Not allocated */
+/* Heap is empty - Not allocated */
 #define UNA_HEAP -5
- /* Not enough free space */
+/* Not enough free space */
 #define NO_SPACE -6
- /* Bad Command */
+/* Bad Command */
 #define BAD_COMMAND -7
- /* Not Enough Arguments */
+/* Not Enough Arguments */
 #define NEO_ARGS -8
 /* Invalid value */
 #define BAD_VALUE -9
@@ -196,7 +196,7 @@ int pack(char* heap, size_t pos, unsigned short block_number, unsigned short blo
 	if (!heap) {
 		return UNA_HEAP;
 	}
-	if (debug || STAT) printf("Packing - Alloc: %u, Number: %u, Size: %u\n", alloc_flag, block_number, block_size);
+	if (debug || stat) printf("Packing - Alloc: %u, Number: %u, Size: %u\n", alloc_flag, block_number, block_size);
 	/* For some reason, can't comment this block out; just leave it here so it never executes */
 	if (0) {
 		/* Pack the first byte: Alloc_status, MSB of Block_size, and Block_Number */
@@ -234,7 +234,7 @@ int pack(char* heap, size_t pos, unsigned short block_number, unsigned short blo
 	setBlockNumber(heap, pos, block_number);
 	setBlockSize(heap, pos, block_size);
 
-	return SUCCESS; 
+	return SUCCESS;
 }
 
 /* Gets the allocation flag of the header at pos */
@@ -343,6 +343,7 @@ int allocate(char* heap, int size) {
 	/* Variable i is at either >= MAX_INDEX or at the header of a valid block */
 	/* block_size should also be the size of the valid block*/
 	if (i < MAX_INDEX) { /* Overwrite the header */
+		if (DEBUG) printf("block counter: %d\n", block_counter);
 		int result = pack(heap, i, ++block_counter, size, ALLOCATION_FLAG);
 		if (result != SUCCESS) {
 			if (debug) printf("Problem packing new information into allocated block. Error Code: %d\n", result);
@@ -359,7 +360,7 @@ int allocate(char* heap, int size) {
 			leftovers = 1;
 		}
 		if (leftovers) { /* Leftovers */
-			/* Create new header */
+						 /* Create new header */
 			size_t split_pos = i + actual_new_size;
 			if (debug) printf("Split Pos: %u\n", split_pos);
 			unsigned short split_block_size = actual_old_size - actual_new_size - HEADER_SIZE;
@@ -378,7 +379,7 @@ int allocate(char* heap, int size) {
 		else {
 			setBlockSize(heap, i, block_size);
 		}
-		if (STAT) {
+		if (stat) {
 			unsigned short bn, bs;
 			unsigned char af;
 			printf("\nAllocated Block Information\n");
@@ -390,7 +391,7 @@ int allocate(char* heap, int size) {
 				unpack(heap, p, &bn, &bs, &af);
 				printf("Position: %u\nBlock Number: %u\nBlock Size: %u\nAlloc FLag: %u\n\n", p, bn, bs, af);
 			}
-			
+
 		}
 		return SUCCESS;
 	}
@@ -408,8 +409,10 @@ int freeBlock(char* heap, size_t pos) {
 	if (!heap) {
 		return UNA_HEAP;
 	}
+	if (DEBUG) printf("Block Number: %u\n", getBlockNumber(heap, pos));
 	/* Set the allocation flag at pos */
 	setAllocFlag(heap, pos, FREE_FLAG);
+	if (DEBUG) printf("Block Number: %u\n", getBlockNumber(heap, pos));
 	/* Set Block Number */
 	if (!free_print) {
 		setBlockNumber(heap, pos, UNA_BLOCK_NUMBER);
@@ -450,13 +453,13 @@ int writeHeap(char* heap, size_t pos, char ch, int num) {
 	if (pos < MIN_INDEX || pos > MAX_INDEX) {
 		return BAD_POS;
 	}
-	if (debug) printf("Num: %u\nPos: %u\n", num,pos);
+	if (debug) printf("Num: %u\nPos: %u\n", num, pos);
 	if (num < 1 || num > HEAP_SIZE - HEADER_SIZE) { /* For making sure it does not write OUTSIDE of the heap*/
 		return OUT_OF_HEAP_CHAR_NUM;
 	}
 
 	unsigned short block_size = getBlockSize(heap, pos);
-	unsigned short segment = num; /* Amount to write, if there is enough 
+	unsigned short segment = num; /* Amount to write, if there is enough
 								  room, this is num */
 	if (block_size < num) { /* If there is not enough room for the chars */
 		if (spillover) {
@@ -472,7 +475,7 @@ int writeHeap(char* heap, size_t pos, char ch, int num) {
 		}
 	}
 	size_t s = pos + HEADER_SIZE; /* First payload index */
-	if (debug) printf("S: %u\nSegment: %u\n", s,segment);
+	if (debug) printf("S: %u\nSegment: %u\n", s, segment);
 	size_t i = 0;
 	/* Write to block */
 	while (i < segment) {
@@ -485,9 +488,9 @@ int writeHeap(char* heap, size_t pos, char ch, int num) {
 		unsigned short diff = num - segment;
 		if (debug) printf("Diff: %u\n", diff);
 		if (skip_header) { /* Skip the next block's header? */
-			/* Recursive call to write the rest of the chars if Spillover is allowed, Error if not */
+						   /* Recursive call to write the rest of the chars if Spillover is allowed, Error if not */
 			return spillover ? writeHeap(heap, i + s, ch, diff) : SPILLOVER_ERROR;
-		} 
+		}
 		else { /* Do not skip next block's header; instead, overwrite it */
 			if (spillover) { /* If spillover is allowed */
 				while (i < diff + segment) { /* Write without skipping */
@@ -557,16 +560,16 @@ int printHeap(char* heap, size_t pos, int num) {
 	unsigned short block_size = getBlockSize(heap, i);
 	while (getBlockNumber(heap, i) != blockNum)
 	{
-		i += HEADER_SIZE + block_size;
-		block_size = getBlockSize(heap, i);
+	i += HEADER_SIZE + block_size;
+	block_size = getBlockSize(heap, i);
 	}
 	if (getBlockSize(heap, i) < bytes) return SPILLOVER_ERROR;
 	i += HEADER_SIZE;
 	int j = 0;
 	while (j < bytes)
 	{
-		printf("%c", heap[i + j]);
-		j++;
+	printf("%c", heap[i + j]);
+	j++;
 	}
 	printf("\n");
 	return SUCCESS;
@@ -606,7 +609,7 @@ int coalesce(char* heap) {
 			}
 		}
 		else { /* Simpler method */
-			/* Join possible */
+			   /* Join possible */
 			if (!getAllocFlag(heap, current) && !getAllocFlag(heap, next)) {
 				/* Add the size to the first header, essentially combining the blocks */
 				unsigned short current_size = getBlockSize(heap, current);
@@ -747,7 +750,7 @@ int executeCommand(char* argv[MAX_ARGS], char* heap) {
 		}
 		/* Write to Block */
 		unsigned short block_number = atoi(argv[1]);
-		size_t pos; 
+		size_t pos;
 		int result = findPos(heap, block_number, &pos);
 		if (result != SUCCESS) {
 			return result;
@@ -802,21 +805,21 @@ int executeCommand(char* argv[MAX_ARGS], char* heap) {
 /* Result Code Look Up */
 char* lookUp(int code) {
 	switch (code) {
-		case SUCCESS: return "Success";
-		case FAILURE: return "General Failure";
-		case BAD_POS: return "Invalid Position";
-		case UNW_POS: return "Unwritable Position";
-		case BAD_BLOCK_NUM: return "Invalid Block Number";
-		case BAD_BLOCK_SIZE: return "Invalid Block Size";
-		case UNA_HEAP: return "Unallocated Heap";
-		case NO_SPACE: return "Not Enough Free Space";
-		case BAD_COMMAND: return "Invalid Command";
-		case NEO_ARGS: return "Not Enough Arguments";
-		case BAD_VALUE: return "Invalid Value";
-		case OUT_OF_HEAP_CHAR_NUM: return "Out of Heap Boundaries";
-		case SPILLOVER_ERROR: return "Spillover Error";
-		case BAD_OPTION: return "Bad Option. Options are debug, stat, join, spillover, fill, skip, freeprint\n";
-		default: return "No such code";
+	case SUCCESS: return "Success";
+	case FAILURE: return "General Failure";
+	case BAD_POS: return "Invalid Position";
+	case UNW_POS: return "Unwritable Position";
+	case BAD_BLOCK_NUM: return "Invalid Block Number";
+	case BAD_BLOCK_SIZE: return "Invalid Block Size";
+	case UNA_HEAP: return "Unallocated Heap";
+	case NO_SPACE: return "Not Enough Free Space";
+	case BAD_COMMAND: return "Invalid Command";
+	case NEO_ARGS: return "Not Enough Arguments";
+	case BAD_VALUE: return "Invalid Value";
+	case OUT_OF_HEAP_CHAR_NUM: return "Out of Heap Boundaries";
+	case SPILLOVER_ERROR: return "Spillover Error";
+	case BAD_OPTION: return "Bad Option. Options are debug, stat, join, spillover, fill, skip, freeprint\n";
+	default: return "No such code";
 	}
 }
 
