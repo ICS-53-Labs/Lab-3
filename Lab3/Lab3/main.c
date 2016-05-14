@@ -125,16 +125,18 @@
 //Allow coalescing
 #define JOIN "join"
 #define ALL "all"
+#define BLOCK_NUMBER_PRINT "numberprint"
 
 /* Global Counter for Block Number */
 int block_counter = 0;
 int spillover = 1;
-int fill_in_write = 1;
-int skip_header = 1;
-int free_print = 1;
-int debug = 1;
-int stat = 1;
-int join = 1;
+int fill_in_write = 0;
+int skip_header = 0;
+int free_print = 0;
+int debug = 0;
+int stat = 0;
+int join = 0;
+int block_number_print = 0;
 
 
 /* Set Alloc Flag */
@@ -343,12 +345,12 @@ int allocate(char* heap, int size) {
 	/* Variable i is at either >= MAX_INDEX or at the header of a valid block */
 	/* block_size should also be the size of the valid block*/
 	if (i < MAX_INDEX) { /* Overwrite the header */
-		if (DEBUG) printf("block counter: %d\n", block_counter);
+		if (debug) printf("block counter: %d\n", block_counter);
 		int result = pack(heap, i, ++block_counter, size, ALLOCATION_FLAG);
 		if (result != SUCCESS) {
 			if (debug) printf("Problem packing new information into allocated block. Error Code: %d\n", result);
 			return result;
-			if (debug) printf("No problem packing new infromation into allocated block.\n");
+			if (debug) printf("No problem packing new information into allocated block.\n");
 		}
 		/* Determine if splitting is needed */
 		unsigned short actual_new_size = HEADER_SIZE + size;
@@ -409,10 +411,10 @@ int freeBlock(char* heap, size_t pos) {
 	if (!heap) {
 		return UNA_HEAP;
 	}
-	if (DEBUG) printf("Block Number: %u\n", getBlockNumber(heap, pos));
+	if (debug) printf("Block Number: %u\n", getBlockNumber(heap, pos));
 	/* Set the allocation flag at pos */
 	setAllocFlag(heap, pos, FREE_FLAG);
-	if (DEBUG) printf("Block Number: %u\n", getBlockNumber(heap, pos));
+	if (debug) printf("Block Number: %u\n", getBlockNumber(heap, pos));
 	/* Set Block Number */
 	if (!free_print) {
 		setBlockNumber(heap, pos, UNA_BLOCK_NUMBER);
@@ -426,20 +428,33 @@ void blocklist(char* heap) {
 	/* Find initial start address */
 	size_t start = (size_t)&heap, end;
 	/* Print the column headings */
-	printf("Size\tAllocated\tStart     \tEnd\n");
+	if (block_number_print) {
+		printf("Num\tSize\tAllocated\tStart     \tEnd\n");
+	}
+	else {
+		printf("Size\tAllocated\tStart     \tEnd\n");
+	}
 	if (debug) printf("MAX_INDEX: %u\n", MAX_INDEX);
 	while (s < MAX_INDEX) {
+		if (debug) printf("Start: %u\n", start);
 		if (debug) printf("Current Pos: %u\n", s);
 		/* Get actual block size */
 		unsigned short size = getBlockSize(heap, s) + HEADER_SIZE;
+		if (debug) printf("Size: %u\n", size);
 		/* Get allocation status */
 		char* alloc_flag = (getAllocFlag(heap, s) ? "yes" : "no");
-		/* Find the ending address */
+		/* Ffrd the ending address */
 		end = (size_t)(start + size - 1);
+		if (debug) printf("End: %u\n", end);
 		/* Print: -# means to right align with a min of # char. */
-		printf("%-4u\t%-9s\t0x%-08x\t0x%-08x\n", size, alloc_flag, start, end);
+		if (block_number_print) {
+			printf("%-3u\t%-4u\t%-9s\t0x%-08x\t0x%-08x\n", getBlockNumber(heap, s), size, alloc_flag, start, end);
+		}
+		else {
+			printf("%-4u\t%-9s\t0x%-08x\t0x%-08x\n", size, alloc_flag, start, end);
+		}
 		s += size;
-		start += s;
+		start += size;
 	}
 }
 
@@ -541,12 +556,11 @@ int printHeap(char* heap, size_t pos, int num) {
 		return SPILLOVER_ERROR;
 	}
 
-	size_t i = 0;
+	size_t i = pos;
 	i += HEADER_SIZE;
 	int j = 0;
 	/* Print block */
-	while (j < num)
-	{
+	while (j < num) {
 		printf("%c", heap[i + j]);
 		++j;
 	}
@@ -639,9 +653,13 @@ void lower(char* string) {
 }
 
 /* Parses and tokenizes user input */
-void parseLine(char* cmdline, char* argv[MAX_ARGS]) {
+int parseLine(char* cmdline, char* argv[MAX_ARGS]) {
 	const char delim[3] = TOKEN_DELIM;
 	size_t s = strlen(cmdline);
+	if (debug) printf("Size: %u\n", s);
+	if (s <= 1) {
+		return BAD_COMMAND;
+	}		
 	/* Get rid of \n */
 	--s;
 	cmdline[s] = '\0';
@@ -657,6 +675,7 @@ void parseLine(char* cmdline, char* argv[MAX_ARGS]) {
 	}
 	/* lower case the command */
 	lower(argv[0]);
+	return SUCCESS;
 }
 
 /* Count the number of arguments */
@@ -680,6 +699,7 @@ int toggle(char* option, int val) {
 	else if (!strcmp(option, FILL_IN_WRITE)) fill_in_write = val;
 	else if (!strcmp(option, SKIP_HEADER)) skip_header = val;
 	else if (!strcmp(option, FREE_PRINT)) free_print = val;
+	else if (!strcmp(option, BLOCK_NUMBER_PRINT)) block_number_print = val;
 	else if (!strcmp(option, ALL)) {
 		debug = val;
 		stat = val;
@@ -694,7 +714,7 @@ int toggle(char* option, int val) {
 }
 
 void listOptions() {
-	printf("debug=%d\nstat=%d\njoin=%d\nspillover=%d\nfill=%d\nskip=%d\nfreeprint=%d\n", debug, stat, join, spillover, fill_in_write, skip_header, free_print);
+	printf("debug=%d\nstat=%d\njoin=%d\nspillover=%d\nfill=%d\nskip=%d\nfreeprint=%d\nnumberprint=%d\n", debug, stat, join, spillover, fill_in_write, skip_header, free_print, block_number_print);
 }
 
 /* Execute command */
@@ -713,7 +733,7 @@ int executeCommand(char* argv[MAX_ARGS], char* heap) {
 		if (result != SUCCESS) {
 			return result;
 		}
-		printf("%u\n", block_counter);
+		printf("Block Number: %u\n", block_counter);
 		if (join) {
 			return coalesce(heap);
 		}
@@ -752,8 +772,19 @@ int executeCommand(char* argv[MAX_ARGS], char* heap) {
 		unsigned short block_number = atoi(argv[1]);
 		size_t pos;
 		int result = findPos(heap, block_number, &pos);
+		if (debug) printf("pos: %u\n", pos);
 		if (result != SUCCESS) {
 			return result;
+		}
+		/* Check if the arg is a char (1 byte) */
+		size_t i = 0;
+		while (argv[i++]) {
+			if (i > 1) {
+				return BAD_VALUE;
+			}
+		}
+		if (i != 1) {
+			return BAD_VALUE;
 		}
 		char ch = argv[2][0];
 		int copies = atoi(argv[3]);
@@ -766,7 +797,9 @@ int executeCommand(char* argv[MAX_ARGS], char* heap) {
 		/* Print Contents of Block */
 		unsigned short block_number = atoi(argv[1]);
 		size_t pos;
+		
 		int result = findPos(heap, block_number, &pos);
+		if (debug) printf("pos: %u\n", pos);
 		if (result != SUCCESS) {
 			return result;
 		}
@@ -835,8 +868,10 @@ int main() {
 		if (feof(stdin)) {
 			exit(0);
 		}
-		parseLine(cmdline, argv); /* Parse Line */
-		int result = executeCommand(argv, heap); /* Execute Command */
+		int result = parseLine(cmdline, argv); /* Parse Line */
+		if (result == SUCCESS) {
+			result = executeCommand(argv, heap); /* Execute Command */
+		}
 		if (result != SUCCESS) {
 			printf("Error: %s\n", lookUp(result));
 		}
